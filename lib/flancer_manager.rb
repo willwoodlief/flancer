@@ -57,7 +57,7 @@ module Flancer
       return scrape_for_new(b_close_driver: b_close_driver)
     end
 
-    def is_logged_in
+    def is_logged_in(b_log:false)
       if @driver.blank?
         Rails.logger.warn '[Flancer] ' + "Logger is blank when checking if logged in"
         return false
@@ -70,8 +70,11 @@ module Flancer
         return true
       rescue Selenium::WebDriver::Error::TimeOutError => toe
         Rails.logger.info '[Flancer] ' + "Did not find the link: My Projects"
-        files = take_snapshot(stem:'did_not_find_my_projects')
-        process_exception(exception: toe,files: files)
+        if b_log
+          files = take_snapshot(stem:'did_not_find_my_projects')
+          process_exception(exception: toe,files: files)
+        end
+
         return false
       end
 
@@ -516,7 +519,7 @@ module Flancer
         button_to_press.click
 
 
-        unless is_logged_in
+        unless is_logged_in(b_log: false)
           Rails.logger.warn '[Flancer] ' + "Clicking login button again"
           button_to_press = driver.find_element(:xpath, button_xpath)
           button_to_press.click
