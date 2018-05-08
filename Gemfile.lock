@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    flancer (0.1.4)
+    flancer (0.1.6)
       kaminari
       rails (~> 5.1.6)
       selenium-webdriver

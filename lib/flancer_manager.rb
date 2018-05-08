@@ -559,8 +559,9 @@ module Flancer
     end
 
     def log_browser_info
+      return if @driver.blank?
       Rails.logger.info '[Flancer] [Browser Errors and Warnings] ' + "browser errors"
-      log_entries = driver.manage.logs.get :browser
+      log_entries = @driver.manage.logs.get :browser
       log_entries.each do |k, v|
         Rails.logger.info '[Flancer][Browser Errors and Warnings] ' + k.to_s + '=>' + v.to_s;
       end
