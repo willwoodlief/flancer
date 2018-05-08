@@ -17,23 +17,36 @@ module Flancer
     attr_reader :driver, :eeid
     attr_accessor :user_name, :user_password, :b_stop_action
 
-    def initialize
+    def initialize(b_no_eeid:false)
       @user_name = Flancer::user_name
       @user_password = Flancer::user_password
       @b_stop_action = false
-      @eeid =  ENV['EEID'] or Rails.logger.warn "[flancer] EEID is not set in environment"
-      Flancer::list_of_managers[@eeid.to_i] = self
+
+      if b_no_eeid
+        @eeid = nil
+      else
+        @eeid =  ENV['EEID'] or Rails.logger.warn "[flancer] EEID is not set in environment"
+        Flancer::list_of_managers[@eeid.to_i] = self
+      end
+
+
       @driver = nil
     end
 
     def clean_up
       close_driver
-      Flancer::list_of_managers.delete(@eeid)
+      Flancer::list_of_managers.delete(@eeid) unless @eeid.blank?
     end
 
     def process_exception(exception:, files: {snapshot: nil, html: nil},extra_message:nil)
-      eeid =  ENV['EEID'] or Rails.logger.warn "[flancer] EEID is not set in environment"
-      return if eeid.blank?
+      unless ENV.key? 'EEID'
+        Rails.logger.info "Cannot process exception without a EEID, this can occur within specs"
+        return
+      end
+
+      Rails.logger.warn "[flancer] EEID is not set in environment" if ENV['EEID'].blank?
+      eeid =  ENV['EEID']
+
       package = {eeid: eeid,exception: exception,files: files,extra_message: extra_message}
       ActiveSupport::Notifications.instrument('notify_exception', options: { extra: package })
       Rails.logger.info "[flancer] sent message and logged"
@@ -103,7 +116,7 @@ module Flancer
     end
 
 
-    def get_post_counts(start_range_ts: nil, end_range_ts: nil)
+    def self.get_post_counts(start_range_ts: nil, end_range_ts: nil)
       where_array = []
       param_hash = {}
 
@@ -133,6 +146,7 @@ module Flancer
 
       return {read: read_count, unread_count:unread_count}
     end
+
     # always ordered by the time posted
     # @param ts_start [nil|Integer] set to an integer to have results start from there (inclusive)
     # @param ts_end [nil|Integer] set to an integer to have results end at there (inclusive)
@@ -219,7 +233,7 @@ module Flancer
     # @param star_color [Integer] rgb hex color of star, if nil then star is not colored
     # @param star_symbol [String] a one character symbol to show the star
     # @param comment [String] add or edit a comment
-    def update_post(id:, b_read: false, star_color: nil, star_symbol: nil, comment: nil)
+    def self.update_post(id:, b_read: false, star_color: nil, star_symbol: nil, comment: nil)
 
       job =  Flancer::FreelancerJob.find(id)
       job.is_read = b_read  unless b_read.nil?
