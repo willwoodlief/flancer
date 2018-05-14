@@ -226,7 +226,7 @@ module Flancer
       total_pages = Flancer::FreelancerJob.all.page(1).per(per_page).total_pages
       ar = Flancer::FreelancerJob.where(where_sql, param_hash).order(order_string).page(page).per(per_page)
 
-      return {results: ar, meta: {page: page, total_pages: total_pages, per_page: per_page }}
+      return {results: ar, meta: {page: page.to_i, total_pages: total_pages.to_i, per_page: per_page.to_i }}
 
     end
 
